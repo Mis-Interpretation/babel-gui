@@ -15,21 +15,33 @@
     <style>
       body {
         margin: 0;
-        padding: 20px;
+        padding: 0;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: rgba(0, 0, 0, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        /*the background of the entire widget should be transparent*/
+        background: transparent;
         color: white;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         user-select: none;
         overflow: hidden;
-        -webkit-app-region: drag;
-        height: calc(100vh - 2px);
+        height: 100vh;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
+      }
+      
+      .widget-container {
+        /*just to make the padding and margin consistent across all resolutions*/
+        margin: 3vh 4vw 2vh 4vw;
+        padding: 2.5vh 3vw;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        -webkit-app-region: drag;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
       }
       
       .widget-header {
@@ -115,29 +127,29 @@
 
     </style>
   </head>
-  <body>
-    <div class="widget-header">
-      <h1 class="widget-title">🔮 Babel Widget Prototype</h1>
-      <div class="controls">
-        <button class="control-btn minimize-btn" id="minimizeBtn">−</button>
-        <button class="control-btn settings-btn" id="settingsBtn">⚙</button>
-        <button class="control-btn close-btn" id="closeBtn">×</button>
-      </div>
-    </div>
-    
-    <div class="widget-content">
-      <div class="stats">
-        <div class="stat-item">
-          <div class="stat-value" id="timeValue">--:--</div>
-          <div class="stat-label">Time</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-value" id="dateValue">---</div>
-          <div class="stat-label">Date</div>
+    <body>
+    <div class="widget-container">
+      <div class="widget-header">
+        <h1 class="widget-title">🔮 Babel Widget Prototype</h1>
+        <div class="controls">
+          <button class="control-btn minimize-btn" id="minimizeBtn">−</button>
+          <button class="control-btn settings-btn" id="settingsBtn">⚙</button>
+          <button class="control-btn close-btn" id="closeBtn">×</button>
         </div>
       </div>
       
-
+      <div class="widget-content">
+        <div class="stats">
+          <div class="stat-item">
+            <div class="stat-value" id="timeValue">--:--</div>
+            <div class="stat-label">Time</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="dateValue">---</div>
+            <div class="stat-label">Date</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
