@@ -5,16 +5,185 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
     />
     <meta
       http-equiv="X-Content-Security-Policy"
       content="default-src 'self'; script-src 'self'"
     />
-    <title>Hello from Electron renderer!</title>
+    <title>Transparent Widget</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        user-select: none;
+        overflow: hidden;
+        -webkit-app-region: drag;
+        height: calc(100vh - 40px);
+        box-sizing: border-box;
+      }
+      
+      .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        cursor: move;
+      }
+      
+      .widget-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+      }
+      
+      .controls {
+        display: flex;
+        gap: 8px;
+        -webkit-app-region: no-drag;
+      }
+      
+      .control-btn {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        color: white;
+        font-weight: bold;
+        transition: all 0.2s ease;
+      }
+      
+      .close-btn { background: #ff5f57; }
+      .minimize-btn { background: #ffbd2e; }
+      .settings-btn { background: #28ca42; }
+      
+      .control-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+      
+      .widget-content {
+        -webkit-app-region: no-drag;
+      }
+      
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      
+      .stat-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        -webkit-app-region: no-drag;
+      }
+      
+      .stat-value {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 2px;
+      }
+      
+      .stat-label {
+        font-size: 11px;
+        opacity: 0.8;
+      }
+      
+      .opacity-slider {
+        width: 100%;
+        margin: 10px 0;
+        -webkit-appearance: none;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        height: 6px;
+        outline: none;
+        -webkit-app-region: no-drag;
+      }
+      
+      .opacity-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+    </style>
   </head>
   <body>
-    <h1>Hello from Electron renderer!</h1>
-    <p>👋</p>
+    <div class="widget-header">
+      <h1 class="widget-title">🔮 Babel Widget Prototype</h1>
+      <div class="controls">
+        <button class="control-btn minimize-btn" id="minimizeBtn">−</button>
+        <button class="control-btn settings-btn" id="settingsBtn">⚙</button>
+        <button class="control-btn close-btn" id="closeBtn">×</button>
+      </div>
+    </div>
+    
+    <div class="widget-content">
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-value" id="timeValue">--:--</div>
+          <div class="stat-label">Time</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="dateValue">---</div>
+          <div class="stat-label">Date</div>
+        </div>
+      </div>
+      
+      <div>
+        <div class="stat-label">Opacity</div>
+        <input type="range" class="opacity-slider" id="opacitySlider" 
+               min="0.1" max="1" step="0.1" value="0.9">
+      </div>
+    </div>
+
+    <script>
+      // Update time display
+      function updateTime() {
+        const now = new Date();
+        document.getElementById('timeValue').textContent = 
+          now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        document.getElementById('dateValue').textContent = 
+          now.toLocaleDateString([], {month: 'short', day: 'numeric'});
+      }
+      
+      updateTime();
+      setInterval(updateTime, 1000);
+      
+      // Control buttons (if electronAPI is available)
+      if (window.electronAPI) {
+        document.getElementById('closeBtn').addEventListener('click', () => {
+          window.electronAPI.closeApp();
+        });
+        
+        document.getElementById('minimizeBtn').addEventListener('click', () => {
+          window.electronAPI.minimizeApp();
+        });
+        
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+          window.electronAPI.toggleAlwaysOnTop();
+        });
+        
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+          window.electronAPI.setOpacity(parseFloat(e.target.value));
+        });
+      }
+    </script>
   </body>
 </html>
