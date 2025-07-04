@@ -9,9 +9,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Example: Minimize to system tray
   minimizeApp: () => ipcRenderer.invoke('minimize-app'),
   
-  // Example: Set window opacity
-  setOpacity: (opacity) => ipcRenderer.invoke('set-opacity', opacity),
-  
   // Example: Toggle always on top
   toggleAlwaysOnTop: () => ipcRenderer.invoke('toggle-always-on-top'),
   

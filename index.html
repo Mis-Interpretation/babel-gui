@@ -26,8 +26,10 @@
         user-select: none;
         overflow: hidden;
         -webkit-app-region: drag;
-        height: calc(100vh - 40px);
+        height: calc(100vh - 2px);
         box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
       }
       
       .widget-header {
@@ -73,21 +75,30 @@
       
       .widget-content {
         -webkit-app-region: no-drag;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
       }
       
       .stats {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-bottom: 15px;
+        gap: 15px;
+        flex: 1;
+        align-content: center;
       }
       
       .stat-item {
         background: rgba(255, 255, 255, 0.1);
-        padding: 10px;
+        padding: 15px;
         border-radius: 8px;
         text-align: center;
         -webkit-app-region: no-drag;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 60px;
       }
       
       .stat-value {
@@ -101,27 +112,7 @@
         opacity: 0.8;
       }
       
-      .opacity-slider {
-        width: 100%;
-        margin: 10px 0;
-        -webkit-appearance: none;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 10px;
-        height: 6px;
-        outline: none;
-        -webkit-app-region: no-drag;
-      }
-      
-      .opacity-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: white;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-      }
+
     </style>
   </head>
   <body>
@@ -146,11 +137,7 @@
         </div>
       </div>
       
-      <div>
-        <div class="stat-label">Opacity</div>
-        <input type="range" class="opacity-slider" id="opacitySlider" 
-               min="0.1" max="1" step="0.1" value="0.9">
-      </div>
+
     </div>
 
     <script>
@@ -178,10 +165,6 @@
         
         document.getElementById('settingsBtn').addEventListener('click', () => {
           window.electronAPI.toggleAlwaysOnTop();
-        });
-        
-        document.getElementById('opacitySlider').addEventListener('input', (e) => {
-          window.electronAPI.setOpacity(parseFloat(e.target.value));
         });
       }
     </script>

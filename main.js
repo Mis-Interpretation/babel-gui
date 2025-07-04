@@ -6,7 +6,7 @@ let mainWindow;
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 200,
+    height: 180,
     // Remove window frame/borders
     frame: false,
     // Make window transparent
@@ -88,11 +88,7 @@ ipcMain.handle('minimize-app', () => {
   }
 })
 
-ipcMain.handle('set-opacity', (event, opacity) => {
-  if (mainWindow) {
-    mainWindow.setOpacity(opacity)
-  }
-})
+
 
 ipcMain.handle('toggle-always-on-top', () => {
   if (mainWindow) {
