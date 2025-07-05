@@ -5,43 +5,67 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:8000"
     />
     <meta
       http-equiv="X-Content-Security-Policy"
       content="default-src 'self'; script-src 'self'"
     />
-    <title>Transparent Widget</title>
+    <title>Babel Chat Widget</title>
     <style>
-      body {
+      html, body {
         margin: 0;
         padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        box-sizing: border-box;
+      }
+      
+      body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         /*the background of the entire widget should be transparent*/
         background: transparent;
         color: white;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         user-select: none;
-        overflow: hidden;
-        height: 100vh;
-        box-sizing: border-box;
+        -webkit-user-select: none;
         display: flex;
         flex-direction: column;
       }
       
+      /* Fix input field interaction */
+      .chat-input {
+        -webkit-app-region: no-drag !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        pointer-events: auto !important;
+      }
+      
+      .send-btn {
+        -webkit-app-region: no-drag !important;
+        pointer-events: auto !important;
+      }
+      
+      .chat-input-container {
+        -webkit-app-region: no-drag !important;
+      }
+      
       .widget-container {
-        /*just to make the padding and margin consistent across all resolutions*/
-        margin: 3vh 4vw 2vh 4vw;
-        padding: 2.5vh 3vw;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(10px);
-        border-radius: 15px;
+        /*Tiny responsive margins perfect for 2K+ displays*/
+        margin: max(2px, 0.15vw);
+        padding: max(8px, 0.5vw);
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(15px);
+        border-radius: max(8px, 0.6vw);
         border: 1px solid rgba(255, 255, 255, 0.2);
         -webkit-app-region: drag;
         flex: 1;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
+        min-height: 120px;
+        overflow: hidden;
       }
       
       .widget-header {
@@ -50,12 +74,28 @@
         align-items: center;
         margin-bottom: 15px;
         cursor: move;
+        flex-shrink: 0;
       }
       
       .widget-title {
         font-size: 16px;
         font-weight: 600;
         margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .connection-status {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ff5f57;
+        transition: background-color 0.3s ease;
+      }
+      
+      .connection-status.connected {
+        background: #28ca42;
       }
       
       .controls {
@@ -90,47 +130,163 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        min-height: 0;
+        overflow: hidden;
       }
       
-      .stats {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
+      .chat-container {
         flex: 1;
-        align-content: center;
-      }
-      
-      .stat-item {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 15px;
-        border-radius: 8px;
-        text-align: center;
-        -webkit-app-region: no-drag;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        min-height: 0;
+        overflow: hidden;
+      }
+      
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 0;
+        min-height: 60px;
+        max-height: none;
+      }
+      
+      .message {
+        margin-bottom: 12px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        max-width: 85%;
+        word-wrap: break-word;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      
+      .message.user {
+        background: rgba(0, 122, 255, 0.8);
+        margin-left: auto;
+        text-align: right;
+      }
+      
+      .message.assistant {
+        background: rgba(255, 255, 255, 0.1);
+        margin-right: auto;
+      }
+      
+      .message.system {
+        background: rgba(255, 193, 7, 0.6);
+        margin: 0 auto;
+        text-align: center;
+        font-size: 12px;
+        font-style: italic;
+        max-width: 70%;
+      }
+      
+      .chat-input-container {
+        flex-shrink: 0;
+        flex-grow: 0;
+        margin-top: auto;
+        padding-top: 15px;
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
         min-height: 60px;
       }
       
-      .stat-value {
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 2px;
+      .chat-input {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 10px 15px;
+        color: white;
+        font-size: 14px;
+        resize: none;
+        outline: none;
+        min-height: 20px;
+        max-height: 60px;
+        overflow-y: auto;
+        user-select: text;
+        box-sizing: border-box;
       }
       
-      .stat-label {
-        font-size: 11px;
-        opacity: 0.8;
+      .chat-input::placeholder {
+        color: rgba(255, 255, 255, 0.6);
       }
       
+      .chat-input:focus {
+        border-color: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.15);
+      }
+      
+      .send-btn {
+        background: rgba(0, 122, 255, 0.8);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+      
+      .send-btn:hover:not(:disabled) {
+        background: rgba(0, 122, 255, 1);
+        transform: scale(1.05);
+      }
+      
+      .send-btn:disabled {
+        background: rgba(255, 255, 255, 0.2);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+      
+      .typing-indicator {
+        display: none;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        margin-bottom: 12px;
+        margin-right: auto;
+        max-width: 85%;
+        font-style: italic;
+        font-size: 14px;
+      }
+      
+      .typing-indicator.visible {
+        display: block;
+      }
+      
+      /* Custom scrollbar */
+      .chat-messages::-webkit-scrollbar {
+        width: 4px;
+      }
+      
+      .chat-messages::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+      }
+      
+      .chat-messages::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+      }
+      
+      .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
 
     </style>
   </head>
     <body>
     <div class="widget-container">
       <div class="widget-header">
-        <h1 class="widget-title">🔮 Babel Widget Prototype</h1>
+        <h1 class="widget-title">
+          🔮 Babel Chat
+          <div class="connection-status" id="connectionStatus"></div>
+        </h1>
         <div class="controls">
           <button class="control-btn minimize-btn" id="minimizeBtn">−</button>
           <button class="control-btn settings-btn" id="settingsBtn">⚙</button>
@@ -139,46 +295,274 @@
       </div>
       
       <div class="widget-content">
-        <div class="stats">
-          <div class="stat-item">
-            <div class="stat-value" id="timeValue">--:--</div>
-            <div class="stat-label">Time</div>
+        <div class="chat-container">
+          <div class="chat-messages" id="chatMessages">
+            <div class="message system">
+              Welcome to Babel Chat! Connecting to server...
+            </div>
           </div>
-          <div class="stat-item">
-            <div class="stat-value" id="dateValue">---</div>
-            <div class="stat-label">Date</div>
+          <div class="typing-indicator" id="typingIndicator">
+            Assistant is typing...
+          </div>
+          <div class="chat-input-container">
+            <textarea 
+              class="chat-input" 
+              id="chatInput" 
+              placeholder="Type your message..."
+              rows="1"
+            ></textarea>
+            <button class="send-btn" id="sendBtn">
+              ➤
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <script>
-      // Update time display
-      function updateTime() {
-        const now = new Date();
-        document.getElementById('timeValue').textContent = 
-          now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        document.getElementById('dateValue').textContent = 
-          now.toLocaleDateString([], {month: 'short', day: 'numeric'});
+      class BabelChat {
+        constructor() {
+          this.ws = null;
+          this.isConnected = false;
+          this.sessionId = this.generateSessionId();
+          
+          this.elements = {
+            chatMessages: document.getElementById('chatMessages'),
+            chatInput: document.getElementById('chatInput'),
+            sendBtn: document.getElementById('sendBtn'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            typingIndicator: document.getElementById('typingIndicator')
+          };
+          
+          // Clear the initial welcome message 
+          this.elements.chatMessages.innerHTML = '';
+          this.addSystemMessage('🔧 Babel Chat initialized - input should work now!');
+          this.initializeEventListeners();
+          this.connectToServer();
+        }
+        
+        generateSessionId() {
+          return 'session_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        initializeEventListeners() {
+          // Send button click
+          this.elements.sendBtn.addEventListener('click', async () => {
+            await this.sendMessage();
+          });
+          
+          // Enter key to send (Shift+Enter for new line)
+          this.elements.chatInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              await this.sendMessage();
+            }
+          });
+          
+          // Auto-resize textarea
+          this.elements.chatInput.addEventListener('input', (e) => {
+            this.autoResizeTextarea(e.target);
+          });
+          
+          // Control buttons
+          if (window.electronAPI) {
+            document.getElementById('closeBtn').addEventListener('click', () => {
+              window.electronAPI.closeApp();
+            });
+            
+            document.getElementById('minimizeBtn').addEventListener('click', () => {
+              window.electronAPI.minimizeApp();
+            });
+            
+            document.getElementById('settingsBtn').addEventListener('click', () => {
+              window.electronAPI.toggleAlwaysOnTop();
+            });
+          }
+        }
+        
+        autoResizeTextarea(textarea) {
+          textarea.style.height = 'auto';
+          textarea.style.height = Math.min(textarea.scrollHeight, 80) + 'px';
+        }
+        
+        connectToServer() {
+          this.addSystemMessage('🔌 Attempting to connect to ws://localhost:8000/chat...');
+          try {
+            this.ws = new WebSocket('ws://localhost:8000/chat');
+            
+            this.ws.onopen = () => {
+              console.log('✅ Connected to Babel server');
+              this.isConnected = true;
+              this.updateConnectionStatus(true);
+              this.addSystemMessage('✅ Connected to Babel server - ready to chat!');
+              this.enableInput();
+              console.log('🎯 Input enabled, you should be able to type now');
+            };
+            
+            this.ws.onmessage = (event) => {
+              console.log('📨 Received from server:', event.data);
+              this.hideTypingIndicator();
+              this.addMessage('assistant', event.data);
+            };
+            
+            this.ws.onclose = (event) => {
+              console.log('❌ Disconnected from server. Code:', event.code, 'Reason:', event.reason);
+              this.isConnected = false;
+              this.updateConnectionStatus(false);
+              this.addSystemMessage('Disconnected from server. Attempting to reconnect...');
+              // Don't disable input anymore - keep it enabled
+              console.log('🔧 Keeping input enabled despite disconnection');
+              
+              // Attempt to reconnect after 3 seconds
+              setTimeout(() => {
+                this.connectToServer();
+              }, 3000);
+            };
+            
+            this.ws.onerror = (error) => {
+              console.error('WebSocket error:', error);
+              this.addSystemMessage('Connection error. Make sure the server is running on localhost:8000');
+            };
+            
+          } catch (error) {
+            console.error('Failed to connect:', error);
+            this.addSystemMessage('Failed to connect. Make sure the server is running.');
+          }
+        }
+        
+        updateConnectionStatus(connected) {
+          if (connected) {
+            this.elements.connectionStatus.classList.add('connected');
+          } else {
+            this.elements.connectionStatus.classList.remove('connected');
+          }
+        }
+        
+
+        
+        enableInput() {
+          this.elements.chatInput.disabled = false;
+          this.elements.chatInput.readOnly = false;
+          this.elements.sendBtn.disabled = false;
+          this.elements.chatInput.placeholder = "Type your message...";
+          this.elements.chatInput.focus();
+        }
+        
+        disableInput() {
+          this.elements.chatInput.disabled = false; // Keep input enabled for testing
+          this.elements.sendBtn.disabled = true;
+          this.elements.chatInput.placeholder = "Server not running - start FastAPI server to chat";
+        }
+        
+        async sendMessage() {
+          const message = this.elements.chatInput.value.trim();
+          if (!message) return;
+          
+          // Add user message to chat
+          this.addMessage('user', message);
+          
+          // Clear input
+          this.elements.chatInput.value = '';
+          this.autoResizeTextarea(this.elements.chatInput);
+          
+          if (!this.isConnected) {
+            // Show helpful message when server is not running
+            setTimeout(() => {
+              this.addSystemMessage('Please start your FastAPI server: cd babel-py && python main_upgraded.py');
+            }, 500);
+            return;
+          }
+          
+          // Show typing indicator
+          this.showTypingIndicator();
+          
+          // Prepare message data
+          const messageData = {
+            text: message,
+            session_id: this.sessionId,
+            screenshot: null
+          };
+          
+          // Capture screenshot if electronAPI is available
+          if (window.electronAPI && window.electronAPI.captureScreenshot) {
+            try {
+              // Add visual feedback for screenshot capture
+              this.addSystemMessage('📸 Capturing screenshot...');
+              
+              const screenshotBase64 = await window.electronAPI.captureScreenshot();
+              messageData.screenshot = screenshotBase64;
+              
+              // Update system message to show screenshot was captured
+              this.addSystemMessage('📸 Screenshot captured successfully!');
+              
+            } catch (error) {
+              console.error('Screenshot capture failed:', error);
+              this.addSystemMessage('⚠️ Screenshot capture failed: ' + error.message);
+            }
+          } else {
+            // Fallback for non-Electron environments
+            console.warn('Screenshot capture not available - running in browser mode');
+            this.addSystemMessage('ℹ️ Running in browser mode - screenshots not available');
+          }
+          
+          // Send to server
+          this.ws.send(JSON.stringify(messageData));
+        }
+        
+        addMessage(role, content) {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = `message ${role}`;
+          messageDiv.textContent = content;
+          
+          this.elements.chatMessages.appendChild(messageDiv);
+          this.scrollToBottom();
+        }
+        
+        addSystemMessage(content) {
+          this.addMessage('system', content);
+        }
+        
+        showTypingIndicator() {
+          this.elements.typingIndicator.classList.add('visible');
+          this.scrollToBottom();
+        }
+        
+        hideTypingIndicator() {
+          this.elements.typingIndicator.classList.remove('visible');
+        }
+        
+        scrollToBottom() {
+          setTimeout(() => {
+            this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
+          }, 100);
+        }
       }
       
-      updateTime();
-      setInterval(updateTime, 1000);
+      // Initialize the chat when the page loads
+      document.addEventListener('DOMContentLoaded', () => {
+        try {
+          new BabelChat();
+        } catch (error) {
+          console.error('Error initializing BabelChat:', error);
+          // Fallback: add error message to page
+          const chatMessages = document.getElementById('chatMessages');
+          if (chatMessages) {
+            chatMessages.innerHTML = '<div class="message system">❌ Error loading chat: ' + error.message + '</div>';
+          }
+        }
+      });
       
-      // Control buttons (if electronAPI is available)
-      if (window.electronAPI) {
-        document.getElementById('closeBtn').addEventListener('click', () => {
-          window.electronAPI.closeApp();
-        });
-        
-        document.getElementById('minimizeBtn').addEventListener('click', () => {
-          window.electronAPI.minimizeApp();
-        });
-        
-        document.getElementById('settingsBtn').addEventListener('click', () => {
-          window.electronAPI.toggleAlwaysOnTop();
-        });
-      }
+      // Global error handler
+      window.addEventListener('error', (event) => {
+        console.error('Global error:', event.error);
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'message system';
+          errorDiv.textContent = '❌ JavaScript error: ' + event.error.message;
+          chatMessages.appendChild(errorDiv);
+        }
+      });
     </script>
   </body>
 </html>

@@ -5,6 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "dev": "electron . --dev",
+    "prod": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

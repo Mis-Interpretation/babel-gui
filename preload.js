@@ -13,5 +13,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   toggleAlwaysOnTop: () => ipcRenderer.invoke('toggle-always-on-top'),
   
   // Example: Make window draggable by any element
-  startDrag: () => ipcRenderer.invoke('start-drag')
+  startDrag: () => ipcRenderer.invoke('start-drag'),
+  
+  // Screenshot capture
+  captureScreenshot: () => ipcRenderer.invoke('capture-screenshot')
 }) 
