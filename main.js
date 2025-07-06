@@ -4,6 +4,13 @@ const fs = require('fs')
 
 let mainWindow;
 
+// Helper function to detect dev mode consistently
+const isDevMode = () => {
+  return process.argv.includes('--dev') || 
+         process.env.NODE_ENV === 'development' ||
+         process.env.NODE_ENV === 'dev'
+}
+
 const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 450,
@@ -102,7 +109,8 @@ const createWindow = () => {
   }, 5000)
   
   // Open DevTools if in dev mode
-  const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'development'
+  const isDev = isDevMode()
+  console.log('🔧 Dev mode detection:', { isDev, argv: process.argv, nodeEnv: process.env.NODE_ENV })
   if (isDev) {
     mainWindow.webContents.openDevTools()
     console.log('🔧 Dev mode enabled - DevTools opened')
@@ -151,8 +159,6 @@ ipcMain.handle('capture-screenshot', async () => {
     // Hide the window temporarily to exclude it from screenshot
     if (mainWindow && wasVisible) {
       mainWindow.hide()
-      // Wait a bit to ensure window is fully hidden
-      await new Promise(resolve => setTimeout(resolve, 100))
     }
     
     // Get all available sources (screens)
@@ -174,8 +180,16 @@ ipcMain.handle('capture-screenshot', async () => {
     // Remove the data:image/png;base64, prefix to get just the base64 data
     const base64Data = screenshot.replace(/^data:image\/png;base64,/, '')
     
-    // Save screenshot to folder if in dev mode
-    const isDev = process.argv.includes('--dev') || process.env.NODE_ENV === 'development'
+    // Show the window again IMMEDIATELY after screenshot capture
+    if (mainWindow && wasVisible) {
+      mainWindow.show()
+      // Re-enforce always-on-top after showing
+      mainWindow.setAlwaysOnTop(true, 'screen-saver')
+    }
+    
+    // Save screenshot to folder if in dev mode (after showing window)
+    const isDev = isDevMode()
+    console.log('🐛 Screenshot capture - isDev:', isDev, 'process.argv:', process.argv)
     if (isDev) {
       try {
         const screenshotsDir = path.join(__dirname, 'debug_screenshots')
@@ -199,13 +213,6 @@ ipcMain.handle('capture-screenshot', async () => {
       } catch (saveError) {
         console.error('Failed to save screenshot in dev mode:', saveError)
       }
-    }
-    
-    // Show the window again if it was visible before
-    if (mainWindow && wasVisible) {
-      mainWindow.show()
-      // Re-enforce always-on-top after showing
-      mainWindow.setAlwaysOnTop(true, 'screen-saver')
     }
     
     return base64Data
